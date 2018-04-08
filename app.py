@@ -5,7 +5,7 @@ import numpy as np
 app = Flask(__name__)
 
 
-@app.route('/',methods=['POST', 'GET'])
+@app.route('/', methods=['POST', 'GET'])
 def index():
     df = pd.read_csv("data.csv")
     df.isnull().sum()
@@ -37,9 +37,9 @@ def index():
         y_atr = request.form['y-axis']
         return redirect(url_for('plots', x=x_atr, y=y_atr))
 
-
     return render_template('index.html', train_Y_pred=train_Y_pred)
     app = Flask(__name__)
 
+
 if __name__ == "__main__":
-    app.run(debug = True)
+    app.run(debug=True)
