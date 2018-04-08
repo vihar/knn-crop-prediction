@@ -1,45 +1,80 @@
-from flask import Flask, render_template, request
-from sklearn.linear_model import LinearRegression
+from flask import Flask, render_template, url_for, request, redirect
 import pandas as pd
 import numpy as np
+from sklearn.linear_model import LinearRegression
+
 app = Flask(__name__)
 
 
-@app.route('/', methods=['POST', 'GET'])
-def index():
+@app.route('/')
+def home():
+    return render_template('home.html')
+
+
+@app.route('/predict', methods=['POST', 'GET'])
+def input_form():
+    if request.method == 'POST':
+        year = request.form['year-axis']
+        return redirect(url_for('prediction', year=year))
+    return render_template('year_form.html')
+
+
+@app.route('/prediction', methods=['GET'])
+def prediction():
     df = pd.read_csv("data.csv")
+    dfc = pd.read_csv("comparetemp.csv")
+    year = request.args.get('year')
+
+    # Data Cleaning
     df.isnull().sum()
     data_r = df.fillna(method='ffill')
     data_r
     k = list(data_r.columns)
     X = data_r[k]
+
+    # Training Model
     X = df['Year']
-    Y = df['Jan']
+    Y = df['Mar']
+    # pd.Dataframe(Y,Z,k).mean()
     train_X = X[:102].reshape(-1, 1)
     train_Y = Y[:102].reshape(-1, 1)
-    test_X = X[-14:].reshape(-1, 1)
-    test_Y = Y[-14:].reshape(-1, 1)
-    df = pd.read_csv('data-cp.csv')
-    autm = df[df.Season == 'Kharif']
-    py = pd.DataFrame(autm.Crop_Year)
+
+    # Model Definition
     reg = LinearRegression()
+    pred_list = []
+    hel = []
+    for i in range(int(year), int(year) + 5):
+        print(i)
+        hel.append(int(i))
+    arr = np.array(hel)
+    print(arr)
+    multi_pred = arr.reshape(-1, 1)
+
+    pred_list.append(int(year))
+    print(pred_list)
+    # Season Selection
+    df = pd.read_csv('data-cp.csv')
     reg.fit(train_X, train_Y)
-    test_Y_pred = reg.predict(test_X)
-    train_Y_pred = reg.predict(train_X)
-    score_X = reg.score(train_X, train_Y)
-    new_pred = np.array([[2018], [2019], [2020], [2021], [2022], [2023], [2024], [
-        2024], [2024], [2025], [2026], [2027], [2028], [2029], [2030]])
-    train_Y_pred = reg.predict(py)
-    print(train_Y_pred)
+    single_x = np.array(pred_list)
+    single_y = reg.predict(single_x)
+    multi_y = reg.predict(multi_pred)
 
-    if request.method == "POST":
-        x_atr = request.form['x-axis']
-        y_atr = request.form['y-axis']
-        return redirect(url_for('plots', x=x_atr, y=y_atr))
+    compare_dic = dict(zip(dfc['crop'], dfc['temperature']))
 
-    return render_template('index.html', train_Y_pred=train_Y_pred)
-    app = Flask(__name__)
+    for i in compare_dic:
+        compare_dic[i] = abs(int(single_y) - compare_dic[i])
+
+    euclid_dict = compare_dic
+    import operator
+
+    sorted_x = sorted(euclid_dict.items(), key=operator.itemgetter(1))
+
+    prediction_crops = sorted_x[:3]
+
+    return render_template('show.html', year=year, single_y=single_y,
+                           compare_dic=compare_dic, sorted_x=sorted_x, prediction_crops=prediction_crops,
+                           multi_y = multi_y)
 
 
-if __name__ == "__main__":
+if __name__ == '__main__':
     app.run(debug=True)
