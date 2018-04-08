@@ -100,6 +100,7 @@ def prediction():
     pred_list = []
     pred_list.append(int(year))
     single_x = np.array(pred_list)
+    single_x = single_x.reshape(-1, 1)
 
     year_avg_temp = reg.predict(single_x)
     year_temp_range = reg_tr.predict(single_x)
