@@ -15,7 +15,8 @@ def home():
 def input_form():
     if request.method == 'POST':
         year = request.form['year-axis']
-        return redirect(url_for('prediction', year=year))
+        month = request.form['month-axis']
+        return redirect(url_for('prediction', year=year, month=month))
     return render_template('year_form.html')
 
 
@@ -25,6 +26,7 @@ def prediction():
     dfc = pd.read_csv("comparetemp.csv")
     dftr = pd.read_csv("temprang.csv")
     year = request.args.get('year')
+    month = request.args.get('month')
 
     # Data Cleaning
     df.isnull().sum()
@@ -35,9 +37,10 @@ def prediction():
 
     # Training Model
     X = df['Year']
-    Y = df['Mar']
+    Y = df[month]
+
     K = dftr['Year']
-    N = dftr['Mar']
+    N = dftr[month]
     # pd.Dataframe(Y,Z,k).mean()
     train_X = X[:102].reshape(-1, 1)
     train_Y = Y[:102].reshape(-1, 1)
@@ -47,6 +50,8 @@ def prediction():
 
     # Model Definition
     reg = LinearRegression()
+    reg_tr = LinearRegression()
+
     pred_list = []
     hel = []
     for i in range(int(year), int(year) + 5):
@@ -60,9 +65,12 @@ def prediction():
     print(pred_list)
     # Season Selection
     reg.fit(train_X, train_Y)
+    reg_tr.fit(train_K, train_N)
+
     single_x = np.array(pred_list)
     single_y = reg.predict(single_x)
     multi_y = reg.predict(multi_pred)
+    multi_y_tr = reg_tr.predict(multi_pred)
 
     reg.fit(train_N, train_K)
     multi_y_range = reg.predict(multi_pred)
@@ -80,7 +88,7 @@ def prediction():
 
     return render_template('show.html', year=year, single_y=single_y,
                            compare_dic=compare_dic, sorted_x=sorted_x, prediction_crops=prediction_crops,
-                           multi_y=multi_y, multi_y_range=multi_y_range)
+                           multi_y=multi_y, multi_y_tr=multi_y_tr)
 
 
 if __name__ == '__main__':
