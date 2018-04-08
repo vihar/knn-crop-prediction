@@ -23,6 +23,7 @@ def input_form():
 def prediction():
     df = pd.read_csv("data.csv")
     dfc = pd.read_csv("comparetemp.csv")
+    dftr = pd.read_csv("temprang.csv")
     year = request.args.get('year')
 
     # Data Cleaning
@@ -35,9 +36,14 @@ def prediction():
     # Training Model
     X = df['Year']
     Y = df['Mar']
+    K = dftr['Year']
+    N = dftr['Mar']
     # pd.Dataframe(Y,Z,k).mean()
     train_X = X[:102].reshape(-1, 1)
     train_Y = Y[:102].reshape(-1, 1)
+
+    train_K = K[:102].reshape(-1, 1)
+    train_N = N[:102].reshape(-1, 1)
 
     # Model Definition
     reg = LinearRegression()
@@ -53,11 +59,13 @@ def prediction():
     pred_list.append(int(year))
     print(pred_list)
     # Season Selection
-    df = pd.read_csv('data-cp.csv')
     reg.fit(train_X, train_Y)
     single_x = np.array(pred_list)
     single_y = reg.predict(single_x)
     multi_y = reg.predict(multi_pred)
+
+    reg.fit(train_N, train_K)
+    multi_y_range = reg.predict(multi_pred)
 
     compare_dic = dict(zip(dfc['crop'], dfc['temperature']))
 
@@ -66,14 +74,13 @@ def prediction():
 
     euclid_dict = compare_dic
     import operator
-
     sorted_x = sorted(euclid_dict.items(), key=operator.itemgetter(1))
 
     prediction_crops = sorted_x[:3]
 
     return render_template('show.html', year=year, single_y=single_y,
                            compare_dic=compare_dic, sorted_x=sorted_x, prediction_crops=prediction_crops,
-                           multi_y = multi_y)
+                           multi_y=multi_y, multi_y_range=multi_y_range)
 
 
 if __name__ == '__main__':
